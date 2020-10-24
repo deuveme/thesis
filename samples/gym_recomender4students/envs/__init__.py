@@ -1,1 +1,1 @@
-from gym_recomender4students.envs.recomender4students_env import Recomender4studentsEnv
+from gym_recommender4students.envs.recommender4students_env import Recommender4studentsEnv
