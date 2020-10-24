@@ -18,8 +18,7 @@ def generateOptions():
     students = ["David", "Pol", "Cecilio", "Laura", "Paula", "Ricardo", "Sara", "Pau", "Maria", "Teresa", "Antoni",
                 "Bernat", "Lidia", "Andrea", "Valentina", "Roc", "Anna", "Elena", "Felix", "Albert", "Ferran", "Sandra",
                 "Julia", "Federico", "Jesus", "Cristiano", "Cristina", "Gerard", "Leo", "Eric", "Eva", "Hugo", "Ivan"
-                                                                                                               "Juan",
-                "Lara", "Mar", "Nora", "Luz", "Raul", "Hector", "Helena", "Penelope", "Alba", "Alejandro",
+                "Juan", "Lara", "Mar", "Nora", "Luz", "Raul", "Hector", "Helena", "Penelope", "Alba", "Alejandro",
                 "Alvaro", "Emma", "Lucas", "Lucia", "Manuel", "Mariana", "Martin", "Ester", "Gabriel", "Isabel",
                 "Jorge", "Marta", "Raquel", "Samuel", "Felipe", "Margarita", "Carla", "Francisco"]
     return universities, abilities, languages, workExperiences, volunteerExperiences, companies, students
@@ -97,7 +96,7 @@ def generateProject(projectId, allUniversities, allAbilities, allLanguages, allW
             "preferredAgeParticipants": generateImportanceAndValue(random.randint(18, 25)),
             "preferredDegreeParticipants": generateImportanceAndValue(random.randint(1, 5)),
             "preferredUniversityParticipants": generateImportanceAndList(allUniversities, 3),
-            "preferredWorkExperienceParticipants": generateImportanceAndList(allWorkExperiences, 3),
+            "preferredWorkExperienceParticipants": generateListWithImportance(allWorkExperiences, 0, 3),
             "preferredVolunteerExperienceParticipants": generateImportanceAndList(allVolunteerExperiences, 3),
             "preferredSkillsParticipants": generateListWithImportance(allAbilities, 1, 6),
             "preferredLanguagesParticipants": generateListWithImportance(allLanguages, 1, 4)}
@@ -150,7 +149,7 @@ def main():
                                 allVolunteerExperiences, companies)
 
     print("Writing JSON in data.json....")
-    with open("data.json", "w") as file:
+    with open("../data/data.json", "w") as file:
         json.dump({"students": students, "projects": projects}, file)
 
     print("Done.")
