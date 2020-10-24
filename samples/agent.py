@@ -1,6 +1,6 @@
 import gym
 
-env = gym.make('Recomender4Students-v0')
+env = gym.make('Recommender4Students-v0')
 for i_episode in range(1000):
     observation = env.reset()
     for t in range(100):
