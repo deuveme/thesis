@@ -2,6 +2,8 @@ import random
 import sys
 import json
 
+DEFAULT_NUMBER_PROJECTS = 20
+DEFAULT_NUMBER_STUDENTS = 100
 
 def generateOptions():
     universities = ["UPC", "UB", "UPF", "UAB", "UOC", "URV"]
@@ -71,6 +73,7 @@ def generateStudent(studentId, universities, allAbilities, allLanguages, allWork
                     students):
     return {"id": studentId, "name": students[random.randint(0, len(students) - 1)],
             "age": random.randint(18, 25), "degree": random.randint(1, 5),
+            "averageMark": round(random.uniform(5.00, 10.00), 2),
             "university": universities[random.randint(0, len(universities) - 1)],
             "abilities": generateList(allAbilities, 1, 6),
             "languages": generateList(allLanguages, 1, 4),
@@ -99,7 +102,8 @@ def generateProject(projectId, allUniversities, allAbilities, allLanguages, allW
             "preferredWorkExperienceParticipants": generateListWithImportance(allWorkExperiences, 0, 3),
             "preferredVolunteerExperienceParticipants": generateImportanceAndList(allVolunteerExperiences, 3),
             "preferredSkillsParticipants": generateListWithImportance(allAbilities, 1, 6),
-            "preferredLanguagesParticipants": generateListWithImportance(allLanguages, 1, 4)}
+            "preferredLanguagesParticipants": generateListWithImportance(allLanguages, 1, 4),
+            "preferredAverageMark": generateImportanceAndValue(round(random.uniform(5.00, 8.00), 2))}
 
 
 def generateStudents(numberStudents, allUniversities, allAbilities, allLanguages, allWorkExperiences,
@@ -125,17 +129,19 @@ def generateProjects(numberProjects, allUniversities, allAbilities, allLanguages
 def main():
     print("Reading arguments....")
 
-    numberProjects = 20
-    numberStudents = 100
-    if len(sys.argv) == 2:
-        numberStudents = sys.argv[1]
+    numberProjects = DEFAULT_NUMBER_PROJECTS
+    numberStudents = DEFAULT_NUMBER_STUDENTS
+    if len(sys.argv) > 2:
+        numberStudents = int(sys.argv[1])
+        print("-> Creating " + sys.argv[1] + " students.")
         if len(sys.argv) == 3:
-            numberProjects = sys.argv[2]
+            numberProjects = int(sys.argv[2])
+            print("-> Creating " + sys.argv[2] + " projects.")
         else:
-            print("-> Missing number of projects to create, default = 20.")
+            print("-> Missing number of projects to create, default = " + str(DEFAULT_NUMBER_PROJECTS) + ".")
     else:
-        print("-> Missing number of students to create, default = 100.")
-        print("-> Missing number of projects to create, default = 20.")
+        print("-> Missing number of students to create, default = " + str(DEFAULT_NUMBER_STUDENTS) + ".")
+        print("-> Missing number of projects to create, default = " + str(DEFAULT_NUMBER_PROJECTS) + ".")
 
     allUniversities, allAbilities, allLanguages, allWorkExperiences, \
         allVolunteerExperiences, companies, allStudents = generateOptions()
@@ -150,7 +156,8 @@ def main():
 
     print("Writing JSON in data.json....")
     with open("../data/data.json", "w") as file:
-        json.dump({"students": students, "projects": projects}, file)
+        json.dump({"students": students,
+                   "projects": projects}, file, indent=4)
 
     print("Done.")
 
