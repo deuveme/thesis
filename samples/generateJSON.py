@@ -5,6 +5,7 @@ import json
 DEFAULT_NUMBER_PROJECTS = 20
 DEFAULT_NUMBER_STUDENTS = 100
 
+
 def generateOptions():
     universities = ["UPC", "UB", "UPF", "UAB", "UOC", "URV"]
     abilities = ["C", "C++", "Python", "PHP", "Golang", "Docker", "Java", ".NET", "C#", "Ruby", "Node.JS",
@@ -75,7 +76,7 @@ def generateStudent(studentId, universities, allAbilities, allLanguages, allWork
             "age": random.randint(18, 25), "degree": random.randint(1, 5),
             "averageMark": round(random.uniform(5.00, 10.00), 2),
             "university": universities[random.randint(0, len(universities) - 1)],
-            "abilities": generateList(allAbilities, 1, 6),
+            "skills": generateList(allAbilities, 1, 6),
             "languages": generateList(allLanguages, 1, 4),
             "workExperience": generateList(allWorkExperiences, 0),
             "volunteerExperience": generateList(allVolunteerExperiences, 0),
@@ -96,14 +97,14 @@ def generateProject(projectId, allUniversities, allAbilities, allLanguages, allW
             "type": allWorkExperiences[random.randint(0, len(allWorkExperiences) - 1)],
             "minimumSalary": random.randint(300, 1500),
             "description": "Project generated random",
+            "preferredSkillsNeeded": generateListWithImportance(allAbilities, 1, 6),
             "preferredAgeParticipants": generateImportanceAndValue(random.randint(18, 25)),
             "preferredDegreeParticipants": generateImportanceAndValue(random.randint(1, 5)),
             "preferredUniversityParticipants": generateImportanceAndList(allUniversities, 3),
             "preferredWorkExperienceParticipants": generateListWithImportance(allWorkExperiences, 0, 3),
-            "preferredVolunteerExperienceParticipants": generateImportanceAndList(allVolunteerExperiences, 3),
-            "preferredSkillsParticipants": generateListWithImportance(allAbilities, 1, 6),
-            "preferredLanguagesParticipants": generateListWithImportance(allLanguages, 1, 4),
-            "preferredAverageMark": generateImportanceAndValue(round(random.uniform(5.00, 8.00), 2))}
+            "preferredVolunteerExperienceParticipants": generateListWithImportance(allVolunteerExperiences, 0, 3),
+            "preferredLanguagesParticipants": generateListWithImportance(allLanguages, 1, 3),
+            "preferredAverageMark": generateImportanceAndValue(round(random.uniform(5.00, 9.70), 2))}
 
 
 def generateStudents(numberStudents, allUniversities, allAbilities, allLanguages, allWorkExperiences,
