@@ -155,8 +155,8 @@ def main():
     projects = generateProjects(numberProjects, allUniversities, allAbilities, allLanguages, allWorkExperiences,
                                 allVolunteerExperiences, companies)
 
-    print("Writing JSON in data.json....")
-    with open("../data/data.json", "w") as file:
+    print("Writing JSON in studentsProjectsData.json....")
+    with open("../data/studentsProjectsData.json", "w") as file:
         json.dump({"students": students,
                    "projects": projects}, file, indent=4)
 

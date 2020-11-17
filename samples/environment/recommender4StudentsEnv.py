@@ -1,6 +1,7 @@
 from copy import deepcopy
-
+import numpy as np
 import gym
+import math
 from geopy.distance import geodesic
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -13,7 +14,7 @@ EPSILON = 2.0
 class Recommender4StudentsEnv(gym.Env):
     """A Recommender for students environment for OpenAI gym"""
 
-    def __init__(self, students, projects, numberOptions):
+    def __init__(self, students, projects, numberOptions, withImage):
         """"Environment initialization"""
 
         super(Recommender4StudentsEnv, self).__init__()
@@ -21,10 +22,23 @@ class Recommender4StudentsEnv(gym.Env):
         self.students = students
         self.projects = projects
         self.numberOptions = numberOptions
+        self.withImage = withImage
 
         self.action_space = spaces.MultiDiscrete((len(students), len(projects)))
 
-        # self.observation_space = spaces.MultiDiscrete([(1, len(students)), (1, len(projects))])
+        if withImage:
+            self.ObservationSpaceLimits = [len(projects) + 1] * (len(students) * numberOptions)
+            self.bytesNeeded = sum(map(lambda limit: math.ceil(math.log(limit, 256)),
+                                       self.ObservationSpaceLimits))
+            self.stateImageSize = int(math.pow(2, math.ceil(math.log(self.bytesNeeded, 4))))
+
+            self.observation_space = spaces.Box(low=0,
+                                                high=255,
+                                                shape=(self.stateImageSize, self.stateImageSize, 3),
+                                                dtype=np.uint8)
+
+        else:
+            self.observation_space = spaces.MultiDiscrete([len(projects) + 1] * (len(students) * numberOptions))
 
         self.state = [[-1 for _ in range(numberOptions)] for _ in range(len(students))]
         self.assigned = [0 for _ in range(numberOptions)]
@@ -112,9 +126,6 @@ class Recommender4StudentsEnv(gym.Env):
 
         student = self.students[studentNumber]
         project = self.projects[projectNumber]
-        alpha = 5.0
-        gamma = 3.0
-        epsilon = 2.0
 
         studentPreferencesPunctuation = self._studentPreferencesPunctuation(student, project)
         projectPreferencesPunctuation = self._projectPreferencesPunctuation(student, project)
@@ -150,6 +161,20 @@ class Recommender4StudentsEnv(gym.Env):
         return (ALPHA * studentPreferencesPunctuation) + \
                (GAMMA * projectPreferencesPunctuation) + \
                (EPSILON * (skillsPunctuation - oldSkillsPunctuation))
+
+    def imageStateGeneration(self):
+        imageState = np.zeros(self.stateImageSize * self.stateImageSize, dtype=np.uint8)
+
+        for student in range(len(self.students)):
+            for option in range(self.numberOptions):
+                projectNumber = self.state[student][option]
+                base256NormalizedProject = projectNumber * (len(self.projects) + 1) / 256
+                imageState[student][option] = base256NormalizedProject
+
+        imageState = np.reshape(imageState, (self.stateImageSize, self.stateImageSize))
+        imageState = np.stack((imageState,) * 3, axis=-1)
+
+        return imageState
 
     def _isDone(self):
         """"Function to check if the state is final"""
@@ -237,7 +262,7 @@ class Recommender4StudentsEnv(gym.Env):
             if self.state[studentNumber][option] == -1:
                 break
 
-        return deepcopy(self.state), reward, self._isDone(), info
+        return self.imageStateGeneration() if self.withImage else deepcopy(self.state), reward, self._isDone(), info
 
     def reset(self):
         """"Environment reset function"""
@@ -245,8 +270,8 @@ class Recommender4StudentsEnv(gym.Env):
         self.state = [[-1 for _ in range(self.numberOptions)] for _ in range(len(self.students))]
         self.assigned = [0 for _ in range(self.numberOptions)]
         self.studentsAssignedToProject = [[[] for _ in range(self.numberOptions)] for _ in range(len(self.projects))]
-        # state = self.state
-        return deepcopy(self.state)
+
+        return self.imageStateGeneration() if self.withImage else deepcopy(self.state)
 
     def render(self):
         """"Environment render function"""
