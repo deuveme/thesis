@@ -4,18 +4,18 @@ import random
 import numpy as np
 import pandas as pd
 from progress.bar import Bar
-# from stable_baselines.common.policies import MlpPolicy
-# from stable_baselines.common.vec_env import DummyVecEnv
-# from stable_baselines import A2C, GAIL, PPO2
+from stable_baselines.common.policies import MlpPolicy
+from stable_baselines.common.vec_env import DummyVecEnv
+from stable_baselines import A2C, PPO2
 from environment import Recommender4StudentsEnv
 
-DEFAULT_NUMBER_OPTIONS = 3
-DEFAULT_AGENT = 0
+DEFAULT_NUMBER_OPTIONS = 2
+DEFAULT_AGENT = 3
 DEFAULT_IS_TRAINING = 1
-DEFAULT_TRAINING_RANGE = 20
-DEFAULT_EXECUTION_RANGE = 1
+DEFAULT_TRAINING_RANGE = 100
+DEFAULT_EXECUTION_RANGE = 100
 DEFAULT_IMPORTING_DATA = 0
-agentName = ["Random", "Q Learning", "AC2", "GAIL", "PPO2"]
+agentName = ["Random", "Q Learning", "AC2", "PPO2"]
 
 # Q Learning ----------------
 # Hyper parameters
@@ -26,8 +26,6 @@ epsilon = 0.1
 # For plotting metrics
 all_epochs = []
 all_penalties = []
-
-
 # ---------------------------
 
 
@@ -106,7 +104,7 @@ def _randomExecution(env):
         skillsTotalScore += skillsScore
         if studentScore > bestStudentScore:
             bestStudentScore = studentScore
-            bestResult = state
+            bestResult = env.finalState()
         progressBar.next()
 
     progressBar.finish()
@@ -149,7 +147,7 @@ def _qLearningExecution(env, qTable, numberOption, numberProjects):
         skillsTotalScore += skillsScore
         if studentScore > bestStudentScore:
             bestStudentScore = studentScore
-            bestResult = state
+            bestResult = env.finalState()
         progressBar.next()
 
     progressBar.finish()
@@ -209,8 +207,6 @@ def _stableBaselineTrainingAndExecution(env, typeAgent):
     """"Function to execute PPO2 algorithm"""
     if typeAgent == 2:
         model = A2C(MlpPolicy, env, verbose=1)
-    elif typeAgent == 3:
-        model = GAIL(MlpPolicy, env, verbose=1)
     else:
         model = PPO2(MlpPolicy, env, verbose=1)
 
@@ -242,7 +238,7 @@ def _stableBaselineTrainingAndExecution(env, typeAgent):
         skillsTotalScore += skillsScore
         if studentScore > bestStudentScore:
             bestStudentScore = studentScore
-            bestResult = state
+            bestResult = env.finalState()
         progressBar.next()
 
     progressBar.finish()

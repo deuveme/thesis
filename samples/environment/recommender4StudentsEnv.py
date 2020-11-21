@@ -2,6 +2,7 @@ from copy import deepcopy
 import numpy as np
 import gym
 import math
+import sys
 from geopy.distance import geodesic
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -27,9 +28,11 @@ class Recommender4StudentsEnv(gym.Env):
         self.action_space = spaces.MultiDiscrete((len(students), len(projects)))
 
         if withImage:
-            self.ObservationSpaceLimits = [len(projects) + 1] * (len(students) * numberOptions)
-            self.bytesNeeded = sum(map(lambda limit: math.ceil(math.log(limit, 256)),
-                                       self.ObservationSpaceLimits))
+            # self.ObservationSpaceLimits = [len(projects) + 1] * (len(students) * numberOptions)
+            self.bytesNeeded = numberOptions * len(students) * ((len(projects) / 256) + 1)
+
+            # self.bytesNeeded = sum(map(lambda limit: math.ceil(math.log(limit, 256)),
+            #                           self.ObservationSpaceLimits))
             self.stateImageSize = int(math.pow(2, math.ceil(math.log(self.bytesNeeded, 4))))
 
             self.observation_space = spaces.Box(low=0,
@@ -162,18 +165,23 @@ class Recommender4StudentsEnv(gym.Env):
                (GAMMA * projectPreferencesPunctuation) + \
                (EPSILON * (skillsPunctuation - oldSkillsPunctuation))
 
-    def imageStateGeneration(self):
+    def _imageStateGeneration(self):
+        """"Function to convert state to image"""
+
         imageState = np.zeros(self.stateImageSize * self.stateImageSize, dtype=np.uint8)
 
+        i = 0
         for student in range(len(self.students)):
             for option in range(self.numberOptions):
                 projectNumber = self.state[student][option]
-                base256NormalizedProject = projectNumber * (len(self.projects) + 1) / 256
-                imageState[student][option] = base256NormalizedProject
+                base256 = (projectNumber + 1).to_bytes(((projectNumber + 1).bit_length() + 7), 'big')
+                base256NormalizedProject = int.from_bytes(base256, 'big')
+                size = int(sys.getsizeof(base256NormalizedProject) / 256) + 1
+                imageState[i:i+size] = base256NormalizedProject
+                i += size
 
         imageState = np.reshape(imageState, (self.stateImageSize, self.stateImageSize))
         imageState = np.stack((imageState,) * 3, axis=-1)
-
         return imageState
 
     def _isDone(self):
@@ -254,7 +262,8 @@ class Recommender4StudentsEnv(gym.Env):
                 info = "[Option number " + str(option) + " of student " + str(studentNumber) + " assigned to project " \
                        + str(projectNumber) + ". Reward = " + str(reward) + " out of 10.]"
 
-                return deepcopy(self.state), reward, self._isDone(), info
+                return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state), \
+                       reward, self._isDone(), {}
 
             '''
             Valida que se llene primero su primera opcion y asi sucesivamente.
@@ -262,7 +271,11 @@ class Recommender4StudentsEnv(gym.Env):
             if self.state[studentNumber][option] == -1:
                 break
 
-        return self.imageStateGeneration() if self.withImage else deepcopy(self.state), reward, self._isDone(), info
+        return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state), \
+               reward, self._isDone(), {}
+
+    def finalState(self):
+        return deepcopy(self.state)
 
     def reset(self):
         """"Environment reset function"""
@@ -271,7 +284,7 @@ class Recommender4StudentsEnv(gym.Env):
         self.assigned = [0 for _ in range(self.numberOptions)]
         self.studentsAssignedToProject = [[[] for _ in range(self.numberOptions)] for _ in range(len(self.projects))]
 
-        return self.imageStateGeneration() if self.withImage else deepcopy(self.state)
+        return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state)
 
     def render(self):
         """"Environment render function"""
