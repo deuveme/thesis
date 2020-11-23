@@ -1,8 +1,8 @@
-from copy import deepcopy
 import numpy as np
 import gym
 import math
 import sys
+from copy import deepcopy
 from geopy.distance import geodesic
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -15,15 +15,21 @@ EPSILON = 2.0
 class Recommender4StudentsEnv(gym.Env):
     """A Recommender for students environment for OpenAI gym"""
 
-    def __init__(self, students, projects, numberOptions, withImage):
+    def __init__(self, students, projects, numberOptions, withImage, mode, studentsAlreadyAssigned):
         """"Environment initialization"""
 
         super(Recommender4StudentsEnv, self).__init__()
 
         self.students = students
         self.projects = projects
-        self.numberOptions = numberOptions
         self.withImage = withImage
+        self.mode = mode
+        if self.mode == 1:
+            self.numberOptions = 1
+            self.studentsAlreadyAssigned = studentsAlreadyAssigned
+            self.studentsSelections = []
+        else:
+            self.numberOptions = numberOptions
 
         self.action_space = spaces.MultiDiscrete((len(students), len(projects)))
 
@@ -46,6 +52,16 @@ class Recommender4StudentsEnv(gym.Env):
         self.state = [[-1 for _ in range(numberOptions)] for _ in range(len(students))]
         self.assigned = [0 for _ in range(numberOptions)]
         self.studentsAssignedToProject = [[[] for _ in range(numberOptions)] for _ in range(len(projects))]
+        self._assignStudents()
+
+    def _assignStudents(self):
+        if self.mode == 1:
+            for studentId in range(len(self.studentsAlreadyAssigned)):
+                projectId = self.studentsAlreadyAssigned[studentId][0]
+                if projectId != -1:
+                    self.state[studentId][0] = projectId
+                    self.assigned[0] += 1
+                    self.studentsAssignedToProject[projectId][0] += [studentId]
 
     @staticmethod
     def _distanceCalculation(studentLocation, projectLocation):
@@ -187,6 +203,16 @@ class Recommender4StudentsEnv(gym.Env):
     def _isDone(self):
         """"Function to check if the state is final"""
 
+        optionFull = 0
+        for option in range(len(self.studentsAssignedToProject)):
+            projectsFullInOption = 0
+            for projectId in range(len(self.studentsAssignedToProject)):
+                if len(self.studentsAssignedToProject[projectId]) == self.projects[projectId]["nParticipants"]:
+                    projectsFullInOption += 1
+            if projectsFullInOption == len(self.projects):
+                optionFull += 1
+        if optionFull == self.numberOptions:
+            return True
         for assignations in self.assigned:
             if assignations != len(self.students):
                 return False
@@ -241,7 +267,49 @@ class Recommender4StudentsEnv(gym.Env):
         studentNumber = action[0]
         projectNumber = action[1]
         reward = 0
-        info = "[Nothing done. Reward 0.]"
+        info = "[Nothing done. Trying to assign student " + str(studentNumber) + " to " + str(projectNumber) + \
+               ". Reward 0.]"
+
+        if self.mode == 2:     # Change it !!!
+            # print(self.assigned)
+            # print(self.studentsSelections[self.assigned[0]]['studentId'])
+            reward = 0
+            studentToAssign = self.studentsSelections[self.assigned[0]]['studentId']
+            # print("Goal: assign student = " + str(studentToAssign))
+            if self.state[studentToAssign][0] == -1:
+                if studentNumber == studentToAssign:
+                    '''
+                    # Mirar primera opcion con plazas
+                    '''
+                    for option in range(0, len(self.studentsSelections[self.assigned[0]]['options'])):
+                        projectId = self.studentsSelections[self.assigned[0]]['options'][option]
+                        # print("option " + str(option) + " = " + str(projectId))
+                        if len(self.studentsAssignedToProject[projectId][0]) < self.projects[projectId]["nParticipants"]:
+                            '''
+                            # Una vez encontrada, mirar si coincide con la propuesta, si coincide se asigna, sino no
+                            '''
+                            # print("To project = " + str(projectId) + " (option " + str(option) + ")")
+                            if projectNumber == projectId:
+                                self.state[studentNumber][0] = self.projects[projectNumber]["id"]
+                                self.studentsAssignedToProject[projectNumber][0] += [studentNumber]
+                                reward = 10
+                                self.assigned[0] += 1
+                                info = "[Student " + str(studentNumber) + " assigned to project " \
+                                       + str(projectNumber) + ". Reward = " + str(reward) + " out of 10.]"
+                                # print(info)
+                                return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state), \
+                                       reward, self._isDone(), {}
+                            else:
+                                reward = 0
+                                # print(info)
+                                return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state), \
+                                       reward, self._isDone(), {}
+
+            reward = 0
+            # print(info)
+            return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state), \
+                   reward, self._isDone(), {}
+
         for option in range(0, self.numberOptions):
             '''
             Valida si: 
@@ -283,6 +351,10 @@ class Recommender4StudentsEnv(gym.Env):
         self.state = [[-1 for _ in range(self.numberOptions)] for _ in range(len(self.students))]
         self.assigned = [0 for _ in range(self.numberOptions)]
         self.studentsAssignedToProject = [[[] for _ in range(self.numberOptions)] for _ in range(len(self.projects))]
+        self._assignStudents()
+        # print(self.state)
+        # print(self.assigned)
+        # print(self.studentsAssignedToProject)
 
         return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state)
 

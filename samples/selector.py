@@ -15,16 +15,23 @@ def main():
         studentWithOptionSelected = []
         progressBar = Bar("Selecting option for each student:", max=len(students))
         for student in students:
+            options = []
+            for option in range(0, numberOptions):
+                optionSelected = student['projectOptions'][r.randint(0, numberOptions - 1)]
+                while optionSelected in options:
+                    optionSelected = student['projectOptions'][r.randint(0, numberOptions - 1)]
+                options.append(optionSelected)
+
             studentWithOptionSelected.append({"studentId": student['studentId'],
                                               "studentAverageMark": student['studentAverageMark'],
-                                              "optionSelected": student['projectOptions'][r.randint(0, numberOptions - 1)]})
+                                              "optionSelected": options})
             progressBar.next()
         progressBar.finish()
 
         print("Done.")
 
-        print("Writing JSON in optionsSelectedData.json....")
-        with open("../data/optionsSelectedData.json", "w") as file:
+        print("Writing JSON in studentsSelectionData.json....")
+        with open("../data/studentsSelectionData.json", "w") as file:
             json.dump({"results": sorted(studentWithOptionSelected,
                                          key=lambda studentOption: -studentOption['studentAverageMark'])}, file, indent=4)
 
