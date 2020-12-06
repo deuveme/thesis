@@ -3,18 +3,18 @@ import sys
 import random
 import numpy as np
 import pandas as pd
+import statistics as st
 from progress.bar import Bar
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.vec_env import DummyVecEnv
+# from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C, PPO2
-from environment import Recommender4StudentsEnv
+from samples.environment.recommender4StudentsEnv import Recommender4StudentsEnv
 
-DEFAULT_MODE = 1
+DEFAULT_MODE = 0
 DEFAULT_NUMBER_OPTIONS = 3
 DEFAULT_AGENT = 2
 DEFAULT_IS_TRAINING = 1
-DEFAULT_TRAINING_RANGE = 10000
-# DEFAULT_TRAINING_RANGE_MULTIPLIER = 100
+DEFAULT_TRAINING_RANGE = 10000000
 DEFAULT_EXECUTION_RANGE = 1
 DEFAULT_IMPORTING_DATA = 0
 agentName = ["Random", "Q Learning", "A2C", "PPO2"]
@@ -36,8 +36,6 @@ def _qTableCreator(numberStudents, numberProjects, numberOptions):
 
     numberActions = numberStudents * numberProjects
     numberStates = (numberProjects + 1) ** (numberStudents * numberOptions)
-    # for i in range(numberStudents * numberOptions):
-    #    numberStates += numberProjects * ((i * numberProjects) + 1)
     print("-> QTable of " + str(numberStates) + " possible states (rows) y " + str(numberActions)
           + " actions (columns).")
     return np.zeros([numberStates, numberActions])
@@ -134,7 +132,6 @@ def _randomExecution(env):
     print("   -> Average final students score: " + str(studentTotalScore / totalEpisodes) + " / 1.")
     print("   -> Average final projects score: " + str(projectTotalScore / totalEpisodes) + " / 1.")
     print("   -> Average final skills score: " + str(skillsTotalScore / totalEpisodes) + " / 1.")
-    # print("Average penalties per episode: " + str(totalPenalties / episodes))
     return bestResult
 
 
@@ -183,7 +180,6 @@ def _qLearningExecution(env, qTable, numberOption, numberProjects):
     print("   -> Average final students score: " + str(studentTotalScore / totalEpisodes) + " / 1.")
     print("   -> Average final projects score: " + str(projectTotalScore / totalEpisodes) + " / 1.")
     print("   -> Average final skills score: " + str(skillsTotalScore / totalEpisodes) + " / 1.")
-    # print("Average penalties per episode: " + str(totalPenalties / episodes))
     return bestResult
 
 
@@ -229,7 +225,7 @@ def _qLearningTraining(env, qTable, numberOptions, numberProjects):
     return qTable
 
 
-def _stableBaselineTrainingAndExecution(env, typeAgent):
+def _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions):
     """"Function to execute Baseline algorithms"""
 
     if typeAgent == 2:
@@ -242,15 +238,24 @@ def _stableBaselineTrainingAndExecution(env, typeAgent):
     print("Model trained.")
 
     print("Starting episodes....")
-    totalSteps, totalEpisodes, studentTotalScore, projectTotalScore, skillsTotalScore = 0, 0, 0., 0., 0.
-
+    totalSteps, numberEpisodes, studentTotalScore, projectTotalScore, skillsTotalScore = 0, 0, 0., 0., 0.
     bestResult = []
     bestStudentScore = 0.0
     bestStudentAssigned = 0
+
+    allStudentsAssigned = []
+    allProjectAssignations = []
+    allSteps = []
+    allResults = []
+    allAverageStudentScore = []
+    allAverageProjectScore = []
+    allAverageSkillsScore = []
+    allStudentScores = []
+    allProjectScores = []
     progressBar = Bar("-> Execution progress:", max=DEFAULT_EXECUTION_RANGE)
     for i in range(DEFAULT_EXECUTION_RANGE):
         studentAssigned = 0
-        state = env.reset()
+        state = env.reset(1)
         steps, reward = 0, 0
         done = False
         while not done:
@@ -258,31 +263,125 @@ def _stableBaselineTrainingAndExecution(env, typeAgent):
             state, reward, done, info = env.step(action)
             # env.render()
             steps += 1
-            if reward != 0:
-                studentAssigned += 1
 
-        totalEpisodes += 1
-        totalSteps += steps
-        studentScore, projectScore, skillsScore = env.stepScores()
-        studentTotalScore += studentScore
-        projectTotalScore += projectScore
-        skillsTotalScore += skillsScore
-        if studentAssigned >= bestStudentAssigned and studentScore > bestStudentScore:
-            bestStudentAssigned = studentAssigned
-            bestStudentScore = studentScore
+        numberEpisodes += 1
+        allSteps.append(steps)
+
+        averageStudentScore, averageProjectScore, averageSkillsScore, studentScores, projectScores, studentsAssigned, projectAssignations = env.stepScores()
+        allResults.append(env.finalState())
+        allAverageStudentScore.append(averageStudentScore)
+        allAverageProjectScore.append(averageProjectScore)
+        allAverageSkillsScore.append(averageSkillsScore)
+        allStudentScores.append(studentScores)
+        allProjectScores.append(projectScores)
+        allStudentsAssigned.append(studentsAssigned)
+        allProjectAssignations.append(projectAssignations)
+        averageStudentAssigned = sum(studentsAssigned) / numberOptions
+
+        if averageStudentAssigned >= bestStudentAssigned and averageStudentScore > bestStudentScore:
+            bestStudentAssigned = averageStudentAssigned
+            bestStudentScore = averageStudentScore
             bestResult = env.finalState()
+
         progressBar.next()
 
     progressBar.finish()
+
     print("Execution done.")
-    print("-> Results after " + str(totalEpisodes) + " episodes:")
-    print("   -> Total student assigned " + str(bestStudentAssigned) + ".")
-    print("   -> Average steps per episode: " + str(totalSteps / totalEpisodes) + ".")
-    print("   -> Average final students score: " + str(studentTotalScore / totalEpisodes) + " / 1.")
-    print("   -> Average final projects score: " + str(projectTotalScore / totalEpisodes) + " / 1.")
-    print("   -> Average final skills score: " + str(skillsTotalScore / totalEpisodes) + " / 1.")
-    # print("Average penalties per episode: " + str(totalPenalties / episodes))
+    _executionAnalysis(numberEpisodes, allStudentScores, allProjectScores, allSteps, bestStudentAssigned, numberOptions,
+                       allStudentsAssigned, allProjectAssignations)
+
     return bestResult
+
+
+def _executionAnalysis(numberEpisodes, allStudentScores, allProjectScores, allSteps, bestStudentAssigned, numberOptions,
+                       allStudentsAssigned, projectAssignations):
+    """"Function to print the analysis of the execution"""
+
+    averageMaxStudentScore = [0.0 for _ in range(numberEpisodes)]
+    averageMaxProjectScore = [0.0 for _ in range(numberEpisodes)]
+    averageMaxSkillsScore = [0.0 for _ in range(numberEpisodes)]
+
+    allAverageStudentScore = [0.0 for _ in range(numberEpisodes)]
+    allAverageProjectScore = [0.0 for _ in range(numberEpisodes)]
+    allAverageSkillsScore = [0.0 for _ in range(numberEpisodes)]
+
+    totalSteps = sum(allSteps)
+
+    for episode in range(len(allStudentScores)):
+        maxStudentScore = []
+        maxProjectScore = []
+        maxSkillsScore = []
+
+        averageStudentScore = []
+        averageProjectScore = []
+        averageSkillsScore = []
+
+        print("   Episode number " + str(episode) + ":")
+        print("   Students:")
+        for studentNumber in range(len(allStudentScores[episode])):
+            averageStudentScore.append(st.mean(allStudentScores[episode][studentNumber]))
+
+            maxStudentScore.append(max(allStudentScores[episode][studentNumber]))
+
+            print("    -> " + str(studentNumber) + " (mean: "
+                  + str(round(st.mean(allStudentScores[episode][studentNumber]) * 100, 2))
+                  + "%, max: " + str(round(max(allStudentScores[episode][studentNumber]) * 100, 2)) + "%):")
+            for option in range(len(allStudentScores[episode][studentNumber])):
+                if allStudentScores[episode][studentNumber][option] != -1:
+                    print("        Score Option " + str(option) + ": "
+                          + str(round((allStudentScores[episode][studentNumber][option] * 100), 2)) + "%.")
+                else:
+                    print("        Score Option " + str(option) + ": not assigned.")
+
+        print("   Projects:")
+        for projectNumber in range(len(allProjectScores[episode])):
+            averageProjectScore.append(st.mean(allProjectScores[episode][projectNumber][0]))
+            averageSkillsScore.append(st.mean(allProjectScores[episode][projectNumber][1]))
+            maxProjectScore.append(max(allProjectScores[episode][projectNumber][0]))
+            maxSkillsScore.append(max(allProjectScores[episode][projectNumber][1]))
+
+            print("    -> " + str(projectNumber) + ":")
+            for option in range(len(allProjectScores[episode][projectNumber])):
+                print("        Option " + str(option) + " (" + str(projectAssignations[episode][projectNumber][option])
+                      + " students assigned):")
+                if projectAssignations[episode][projectNumber][option] != 0:
+                    print("         -> Score: "
+                          + str(round((allProjectScores[episode][projectNumber][0][option] * 100), 2)) + "%.")
+                    print("         -> Skills: "
+                          + str(round((allProjectScores[episode][projectNumber][1][option] * 100), 2)) + "%.")
+
+        print("   Total student assigned (" + str(sum(allStudentsAssigned[episode]) / numberOptions) + "): ")
+        for option in range(len(allStudentsAssigned[episode])):
+            print("      -> Option " + str(option) + ": " + str(allStudentsAssigned[episode][option]) +
+                  " (" + str(round((allStudentsAssigned[episode][option] / len(allStudentScores[episode])) * 100, 2)) +
+                  "%).")
+        print("   Steps: " + str(round(allSteps[episode], 2)) + ".")
+        print("   Average final students score: " + str(round(st.mean(averageStudentScore) * 100, 2)) + "%.")
+        print("   Average final projects score: " + str(round(st.mean(averageProjectScore) * 100, 2)) + "%.")
+        print("   Average final skills score: " + str(round(st.mean(averageSkillsScore) * 100, 2)) + "%.")
+        print("   Average max students score: " + str(round(st.mean(maxStudentScore) * 100, 2)) + "%.")
+        print("   Average max projects score: " + str(round(st.mean(maxProjectScore) * 100, 2)) + "%.")
+        print("   Average max skills score: " + str(round(st.mean(maxSkillsScore) * 100, 2)) + "%.")
+        print("")
+
+        averageMaxStudentScore[episode] = st.mean(maxStudentScore)
+        averageMaxProjectScore[episode] = st.mean(maxProjectScore)
+        averageMaxSkillsScore[episode] = st.mean(maxSkillsScore)
+
+        allAverageStudentScore[episode] = st.mean(averageStudentScore)
+        allAverageProjectScore[episode] = st.mean(averageProjectScore)
+        allAverageSkillsScore[episode] = st.mean(averageSkillsScore)
+
+    print("-> Results after " + str(numberEpisodes) + " episodes:")
+    print("   -> Total student assigned " + str(round((bestStudentAssigned / numberEpisodes), 2)) + ".")
+    print("   -> Average steps per episode: " + str(round((totalSteps / numberEpisodes), 2)) + ".")
+    print("   -> Average final students score: " + str(round(st.mean(allAverageStudentScore) * 100, 2)) + "%.")
+    print("   -> Average final projects score: " + str(round(st.mean(allAverageProjectScore) * 100, 2)) + "%.")
+    print("   -> Average final skills score: " + str(round(st.mean(allAverageSkillsScore) * 100, 2)) + "%.")
+    print("   -> Average max students score: " + str(round(st.mean(averageMaxStudentScore) * 100, 2)) + "%.")
+    print("   -> Average max projects score: " + str(round(st.mean(averageMaxProjectScore) * 100, 2)) + "%.")
+    print("   -> Average max skills score: " + str(round(st.mean(averageMaxSkillsScore) * 100, 2)) + "%.")
 
 
 def _finalAnalysis(finalState, studentsSelections):
@@ -401,12 +500,14 @@ def main():
         print("Importing data....")
         with open("../data/studentsProjectsData.json") as dataFile:
             data = json.load(dataFile)
+            projectPlaces = data['placesInAllProjects']
             for student in data['students']:
                 students += [student]
 
             for project in data['projects']:
                 projects += [project]
 
+        studentsDeleted = []
         studentsSelections = []
         if mode == 1:
             with open("../data/studentsSelectionData.json") as dataFile:
@@ -414,15 +515,25 @@ def main():
                 for student in data['results']:
                     studentsSelections += [{"options": student['optionSelected'],
                                             "studentId": student['studentId']}]
-
+                studentsDeleted = data['studentsWithoutAssignations']
                 print("Data imported.")
-                print("-> " + str(len(students)) + " students and " + str(len(projects)) + " projects imported.")
+                print("-> " + str(len(students)) + " students and " + str(len(projects)) + " projects with "
+                      + str(projectPlaces) + " places available imported.")
                 studentsAlreadyAssigned, studentsAssigned = _assignStudentsWithSelections(len(students),
                                                                                           studentsSelections, projects)
 
         else:
             print("Data imported.")
-            print("-> " + str(len(students)) + " students and " + str(len(projects)) + " projects imported.")
+            print("-> " + str(len(students)) + " students and " + str(len(projects)) + " projects with "
+                  + str(projectPlaces) + " places available imported.")
+            studentsAlreadyAssigned = []
+
+        if projectPlaces < len(students):
+            print("-> The students with less average mark won't have assignation.")
+            while projectPlaces < len(students):
+                studentsDeleted.append(students.pop()["id"])
+            print("-> " + str(len(students)) + " students will be assigned for the "
+                  + str(projectPlaces) + " places available.")
 
         if mode == 0 or studentsAssigned < len(students):
             print("Creating environment....")
@@ -453,7 +564,7 @@ def main():
                 print("QTable exported.")
 
             else:
-                bestResult = _stableBaselineTrainingAndExecution(env, typeAgent)
+                bestResult = _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions)
 
             env.close()
             print("Environment closed.")
@@ -464,13 +575,15 @@ def main():
             print("Exporting JSON of options....")
             with open("../data/optionsData.json", "w") as file:
                 json.dump({"numberOptions": numberOptions,
-                           "results": _generateOptionsData(bestResult, students, numberOptions, True)}, file, indent=4)
+                           "results": _generateOptionsData(bestResult, students, numberOptions, True),
+                           "studentsWithoutAssignations": studentsDeleted}, file, indent=4)
             print("JSON of options exported.")
         else:
             _finalAnalysis(bestResult, studentsSelections)
             print("Exporting JSON with final options for students....")
             with open("../data/finalResults.json", "w") as file:
-                json.dump({"results": _generateOptionsData(bestResult, students, numberOptions, False)}, file, indent=4)
+                json.dump({"results": _generateOptionsData(bestResult, students, numberOptions, False),
+                           "studentsWithoutAssignations": studentsDeleted}, file, indent=4)
             print("JSON of final options for students exported.")
 
     except OSError as err:

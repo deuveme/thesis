@@ -10,6 +10,7 @@ def main():
             data = json.load(dataFile)
             numberOptions = data['numberOptions']
             students = data['results']
+            studentsDeleted = data['studentsWithoutAssignations']
         print("Data imported.")
 
         studentWithOptionSelected = []
@@ -33,7 +34,8 @@ def main():
         print("Writing JSON in studentsSelectionData.json....")
         with open("../data/studentsSelectionData.json", "w") as file:
             json.dump({"results": sorted(studentWithOptionSelected,
-                                         key=lambda studentOption: -studentOption['studentAverageMark'])}, file, indent=4)
+                                         key=lambda studentOption: -studentOption['studentAverageMark']),
+                       "studentsWithoutAssignations": studentsDeleted}, file, indent=4)
 
         print("Done.")
 

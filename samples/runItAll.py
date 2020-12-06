@@ -1,10 +1,10 @@
 import os
 import sys
 
-DEFAULT_NUMBER_PROJECTS = 20
-DEFAULT_NUMBER_STUDENTS = 100
-DEFAULT_NUMBER_OPTIONS = 3
-DEFAULT_AGENT = 2
+DEFAULT_NUMBER_PROJECTS = "20"
+DEFAULT_NUMBER_STUDENTS = "100"
+DEFAULT_NUMBER_OPTIONS = "3"
+DEFAULT_AGENT = "2"
 
 
 def main():
@@ -31,19 +31,19 @@ def main():
     print(" -> Number of agent to use: " + numberStudents)
 
     print("[EXECUTING generateJSON.py]")
-    os.system("generateJSON.py " + numberStudents + " " + numberProjects)
+    os.system("python ./generateJSON.py " + numberStudents + " " + numberProjects)
     print("[DONE]")
 
     print("[EXECUTING recommender.py]")
-    os.system("recommender.py " + str(0) + " " + numberOptions + " " + typeAgent + " " + str(1) + " " + str(0))
+    os.system("python ./recommender.py " + str(0) + " " + numberOptions + " " + typeAgent + " " + str(1) + " " + str(0))
     print("[DONE]")
 
     print("[EXECUTING selector.py]")
-    os.system("selector.py")
+    os.system("python ./selector.py")
     print("[DONE]")
 
     print("[EXECUTING recommender.py]")
-    os.system("recommender.py " + str(1) + " " + str(1) + " " + typeAgent + " " + str(1) + " " + str(0))
+    os.system("python ./recommender.py " + str(1) + " " + str(1) + " " + typeAgent + " " + str(1) + " " + str(0))
     print("[DONE]")
 
 
