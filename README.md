@@ -28,18 +28,17 @@ On:
 - `siEntrena` es un bool que indica si es vol que entreni abans o no, 
 si no es posa valor s'assignarà el valor per defecte, 1, entrenar.
 - `tipusAgent` es el número del agent que es vol entrenar, hi ha les següents opcions, 
-si no es posa valor s'assignarà el valor per defecte, 1, QLearning:
+si no es posa valor s'assignarà el valor per defecte, 2, AC2:
     - 0: Random, Asignació aleatoria complint requisits.
     - 1: Q Learning 
     - 2: AC2
-    - 3: GAIL
     - 4: PPO2
     
 - `numeroOpcions` es el número d'opcions que es vol generar per estudiant, 
 si no es posa valor s'assignarà el valor per defecte, 3.
 - `dataImportada` es el bool que indica si s'importa data externa o no (exemple QTable de QLearning), default 0, no.
 
-Una vegada acaba d'executar, si es QLearning exporta QTable a qTable.csv i els resultats a `optionsData.json`, 
+Una vegada acaba d'executar, si es QLearning exporta QTable a qTableData.csv i els resultats a `optionsData.json`, 
 on estan les opcions que te cada estudiant amb la seva mitjana.
 
 
@@ -51,6 +50,35 @@ Per executar cal disposar del json `optionsData.json` generat per l'anterior scr
 
 Una vegada acaba d'executar, s'exporta els resultats a `optionsSelectedData.json`, 
 on estan els estudiants ordenats per nota i amb l'opció triada.
+
+**generateJSON.py**:
+Script que genera un JSON aleatori d'alumnes i projectes segons questions4students.md i questions4companies.md.
+Per executar-lo cal posar:
+
+`python generateJSON.py numeroAlumnes numeroProjectes`
+
+On:
+- `numeroAlumnes` es el número d'alumenes a generar, si no es posa valor s'assignarà el valor per defecte, 100.
+- `numeroProjectes` es el número de projectes a generar, si no es posa valor s'assignarà el valor per defecte, 20.
+
+Una vegada acaba d'executar, s'exporta els resultats a `studentsProjectsData.json`, 
+on estan tots els estudiants i projectes creats.
+
+**runItAll.py**:
+Script que executa tots els scripts anteriors seguits.
+
+`python runItAll.py numeroAlumnes numeroProjectes numeroOpcions tipusAgent`
+
+On:
+- `numeroAlumnes` es el número d'alumenes a generar, si no es posa valor s'assignarà el valor per defecte, 100.
+- `numeroProjectes` es el número de projectes a generar, si no es posa valor s'assignarà el valor per defecte, 20.
+- `numeroOpcions` es el número d'opcions que vols que generi per estudiant, si no es posa valor s'assignarà el 
+valor per defecte, 3.
+- `tipusAgent` es el tipus d'agent que es vol utilitzar, funciona igual que l'script `recommender.py`, 
+si no es posa valor s'assignarà el valor per defecte, AC2.
+
+Una vegada acaba d'executar, s'exporta els resultats a `studentsProjectsData.json`, 
+on estan tots els estudiants i projectes creats.
 
 #### Carpeta /Documentation ####
 Trobarà tota la documentació del projecte.
