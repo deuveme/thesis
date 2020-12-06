@@ -2,7 +2,7 @@ import random
 import sys
 import json
 
-DEFAULT_NUMBER_PROJECTS = 20
+DEFAULT_NUMBER_PROJECTS = 40
 DEFAULT_NUMBER_STUDENTS = 100
 
 
@@ -91,7 +91,7 @@ def generateProject(projectId, allUniversities, allAbilities, allLanguages, allW
                     allVolunteerExperiences, companies):
     return {"id": projectId, "companyName": companies[random.randint(0, len(companies) - 1)],
             "projectName": "Random Project number " + str(projectId),
-            "nParticipants": random.randint(1, 5),
+            "nParticipants": random.randint(1, 10),
             "location": (random.uniform(41.43, 41.34), random.uniform(2.05, 2.21)),
             "remote": random.randint(0, 1),
             "type": allWorkExperiences[random.randint(0, len(allWorkExperiences) - 1)],
@@ -120,11 +120,13 @@ def generateStudents(numberStudents, allUniversities, allAbilities, allLanguages
 def generateProjects(numberProjects, allUniversities, allAbilities, allLanguages, allWorkExperiences,
                      allVolunteerExperiences, companies):
     projects = []
+    studentsPlaces = 0
     for projectId in range(0, numberProjects):
         projects.append(generateProject(projectId, allUniversities, allAbilities, allLanguages, allWorkExperiences,
                                         allVolunteerExperiences, companies))
+        studentsPlaces += projects[projectId]["nParticipants"]
 
-    return projects
+    return projects, studentsPlaces
 
 
 def main():
@@ -151,14 +153,20 @@ def main():
     students = generateStudents(numberStudents, allUniversities, allAbilities, allLanguages, allWorkExperiences,
                                 allVolunteerExperiences, allStudents)
 
+    students = sorted(students, key=lambda student: -student['averageMark'])
+
+    for studentId in range(len(students)):
+        students[studentId]["id"] = studentId
+
     print("Generating projects....")
-    projects = generateProjects(numberProjects, allUniversities, allAbilities, allLanguages, allWorkExperiences,
-                                allVolunteerExperiences, companies)
+    projects, studentPlaces = generateProjects(numberProjects, allUniversities, allAbilities, allLanguages,
+                                               allWorkExperiences, allVolunteerExperiences, companies)
 
     print("Writing JSON in studentsProjectsData.json....")
     with open("../data/studentsProjectsData.json", "w") as file:
-        json.dump({"students": students,
-                   "projects": projects}, file, indent=4)
+        json.dump({"students": sorted(students, key=lambda student: -student['averageMark']),
+                   "projects": projects,
+                   "placesInAllProjects": studentPlaces}, file, indent=4)
 
     print("Done.")
 
