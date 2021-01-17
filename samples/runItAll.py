@@ -8,6 +8,8 @@ DEFAULT_AGENT = "2"
 
 
 def main():
+    """Executes all the scripts of the project together."""
+
     print("Executing all scripts together....")
     print("Reading arguments....")
 
@@ -26,9 +28,9 @@ def main():
 
     print("Executing system with:")
     print(" -> Number of students: " + numberStudents)
-    print(" -> Number of projects: " + numberStudents)
-    print(" -> Number of options: " + numberStudents)
-    print(" -> Number of agent to use: " + numberStudents)
+    print(" -> Number of projects: " + numberProjects)
+    print(" -> Number of options: " + numberOptions)
+    print(" -> Number of agent to use: " + typeAgent)
 
     print("[EXECUTING generateJSON.py]")
     os.system("python ./generateJSON.py " + numberStudents + " " + numberProjects)

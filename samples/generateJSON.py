@@ -2,14 +2,16 @@ import random
 import sys
 import json
 
-DEFAULT_NUMBER_PROJECTS = 40
+DEFAULT_NUMBER_PROJECTS = 20
 DEFAULT_NUMBER_STUDENTS = 100
 
 
 def generateOptions():
+    """"Function to generate all the default options"""
+
     universities = ["UPC", "UB", "UPF", "UAB", "UOC", "URV"]
     abilities = ["C", "C++", "Python", "PHP", "Golang", "Docker", "Java", ".NET", "C#", "Ruby", "Node.JS",
-                 "React", "Javascript", "Perl", "Rest API", "XML", "PostgreSQL", "MySQL", "MongoDB"]
+                 "React", "Javascript", "Perl", "HTML", "Rest API", "XML", "PostgreSQL", "MySQL", "MongoDB"]
     languages = ["English", "Spanish", "Catalan", "German", "French", "Greek", "Italian", "Russian",
                  "Romanian", "Hungarian", "Czech", "Polish", "Arab", "Chinese", "Japanese", "Korean"]
     workExperiences = ["Full-Stack", "BackEnd", "FrontEnd", "Human Resources", "Engineering", "Administration",
@@ -28,6 +30,8 @@ def generateOptions():
 
 
 def generateListWithImportance(inputList, minValue, valueMax):
+    """"Generate list with elements with importance"""
+
     result = []
     for _ in range(0, random.randint(minValue, valueMax)):
         findIt = False
@@ -40,6 +44,8 @@ def generateListWithImportance(inputList, minValue, valueMax):
 
 
 def generateList(inputList, valueMin, valueMax=-1):
+    """"Generate list"""
+
     if valueMax == -1:
         valueMax = len(inputList) - 1
 
@@ -55,6 +61,8 @@ def generateList(inputList, valueMin, valueMax=-1):
 
 
 def generateImportanceAndList(inputList, maxValue):
+    """"Generate list with its importance"""
+
     importance = random.randint(0, 5)
     if importance != 0:
         return {"importance": importance, "list": generateList(inputList, 1, random.randint(1, maxValue))}
@@ -63,6 +71,8 @@ def generateImportanceAndList(inputList, maxValue):
 
 
 def generateImportanceAndValue(value):
+    """"Generate value with its importance"""
+
     importance = random.randint(0, 5)
     if importance != 0:
         return {"importance": importance, "value": value}
@@ -72,6 +82,8 @@ def generateImportanceAndValue(value):
 
 def generateStudent(studentId, universities, allAbilities, allLanguages, allWorkExperiences, allVolunteerExperiences,
                     students):
+    """"Generate one student"""
+
     return {"id": studentId, "name": students[random.randint(0, len(students) - 1)],
             "age": random.randint(18, 25), "degree": random.randint(1, 5),
             "averageMark": round(random.uniform(5.00, 10.00), 2),
@@ -89,6 +101,8 @@ def generateStudent(studentId, universities, allAbilities, allLanguages, allWork
 
 def generateProject(projectId, allUniversities, allAbilities, allLanguages, allWorkExperiences,
                     allVolunteerExperiences, companies):
+    """"Generate one project"""
+
     return {"id": projectId, "companyName": companies[random.randint(0, len(companies) - 1)],
             "projectName": "Random Project number " + str(projectId),
             "nParticipants": random.randint(1, 10),
@@ -109,6 +123,8 @@ def generateProject(projectId, allUniversities, allAbilities, allLanguages, allW
 
 def generateStudents(numberStudents, allUniversities, allAbilities, allLanguages, allWorkExperiences,
                      allVolunteerExperiences, allStudents):
+    """"Generate all the students"""
+
     students = []
     for studentId in range(0, numberStudents):
         students.append(generateStudent(studentId, allUniversities, allAbilities, allLanguages, allWorkExperiences,
@@ -119,6 +135,8 @@ def generateStudents(numberStudents, allUniversities, allAbilities, allLanguages
 
 def generateProjects(numberProjects, allUniversities, allAbilities, allLanguages, allWorkExperiences,
                      allVolunteerExperiences, companies):
+    """"Generate all projects"""
+
     projects = []
     studentsPlaces = 0
     for projectId in range(0, numberProjects):

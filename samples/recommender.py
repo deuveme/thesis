@@ -4,9 +4,9 @@ import random
 import numpy as np
 import pandas as pd
 import statistics as st
+from time import time
 from progress.bar import Bar
 from stable_baselines.common.policies import MlpPolicy
-# from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C, PPO2
 from samples.environment.recommender4StudentsEnv import Recommender4StudentsEnv
 
@@ -14,7 +14,7 @@ DEFAULT_MODE = 0
 DEFAULT_NUMBER_OPTIONS = 3
 DEFAULT_AGENT = 2
 DEFAULT_IS_TRAINING = 1
-DEFAULT_TRAINING_RANGE = 10000000
+DEFAULT_TRAINING_RANGE = 10000
 DEFAULT_EXECUTION_RANGE = 1
 DEFAULT_IMPORTING_DATA = 0
 agentName = ["Random", "Q Learning", "A2C", "PPO2"]
@@ -24,10 +24,6 @@ agentName = ["Random", "Q Learning", "A2C", "PPO2"]
 alpha = 0.1
 gamma = 0.6
 epsilon = 0.1
-
-# For plotting metrics
-all_epochs = []
-all_penalties = []
 # ---------------------------
 
 
@@ -100,7 +96,7 @@ def _randomExecution(env):
     for _ in range(DEFAULT_EXECUTION_RANGE):
         studentAssigned = 0
         # print("Episode " + str(episode) + ":")
-        state = env.reset()
+        env.reset()
         steps, reward = 0, 0
         done = False
         while not done:
@@ -153,7 +149,6 @@ def _qLearningExecution(env, qTable, numberOption, numberProjects):
         while not done:
             actionPosition = np.argmax(_accessQTable(qTable, numberOption, numberProjects, state))
             action = _obtainAction(actionPosition, numberProjects)
-            # action = np.argmax(qTable[state])
             state, reward, done, info = env.step(action)
             if reward != 0:
                 studentAssigned += 1
@@ -201,19 +196,12 @@ def _qLearningTraining(env, qTable, numberOptions, numberProjects):
             else:
                 actionPosition = np.argmax(_accessQTable(qTable, numberOptions, numberProjects, state))
                 action = _obtainAction(actionPosition, numberProjects)
-                # action = np.argmax(qTable[state])
+
             nextState, reward, done, info = env.step(action)
-
             oldValue = _accessQTable(qTable, numberOptions, numberProjects, state, action)
-            # oldValue = qTable[state, action]
-
             nextMax = np.max(_accessQTable(qTable, numberOptions, numberProjects, nextState))
-            # nextMax = np.max(qTable[nextState])
-
             newValue = (1 - alpha) * oldValue + alpha * (reward + gamma * nextMax)
-
             qTable = _editQTable(qTable, numberOptions, numberProjects, state, action, newValue)
-            # qTable[state, action] = newValue
 
             state = nextState
             epochs += 1
@@ -225,7 +213,7 @@ def _qLearningTraining(env, qTable, numberOptions, numberProjects):
     return qTable
 
 
-def _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions):
+def _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions, mode):
     """"Function to execute Baseline algorithms"""
 
     if typeAgent == 2:
@@ -234,14 +222,17 @@ def _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions):
         model = PPO2(MlpPolicy, env, verbose=1)
 
     print("Training model....")
+    startTime = time()
     model.learn(total_timesteps=DEFAULT_TRAINING_RANGE)
-    print("Model trained.")
+    trainingTime = time() - startTime
+    print("Model trained in " + str(trainingTime) + ".")
 
     print("Starting episodes....")
     totalSteps, numberEpisodes, studentTotalScore, projectTotalScore, skillsTotalScore = 0, 0, 0., 0., 0.
     bestResult = []
     bestStudentScore = 0.0
     bestStudentAssigned = 0
+    sumStudentAssigned = 0.0
 
     allStudentsAssigned = []
     allProjectAssignations = []
@@ -254,10 +245,10 @@ def _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions):
     allProjectScores = []
     progressBar = Bar("-> Execution progress:", max=DEFAULT_EXECUTION_RANGE)
     for i in range(DEFAULT_EXECUTION_RANGE):
-        studentAssigned = 0
         state = env.reset(1)
         steps, reward = 0, 0
         done = False
+        print("Execution " + str(i))
         while not done:
             action, _state = model.predict(state)
             state, reward, done, info = env.step(action)
@@ -277,6 +268,7 @@ def _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions):
         allStudentsAssigned.append(studentsAssigned)
         allProjectAssignations.append(projectAssignations)
         averageStudentAssigned = sum(studentsAssigned) / numberOptions
+        sumStudentAssigned += sum(studentsAssigned) / numberOptions
 
         if averageStudentAssigned >= bestStudentAssigned and averageStudentScore > bestStudentScore:
             bestStudentAssigned = averageStudentAssigned
@@ -288,14 +280,16 @@ def _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions):
     progressBar.finish()
 
     print("Execution done.")
-    _executionAnalysis(numberEpisodes, allStudentScores, allProjectScores, allSteps, bestStudentAssigned, numberOptions,
-                       allStudentsAssigned, allProjectAssignations)
+    print(trainingTime)
+    if mode == 0:
+        _executionAnalysis(numberEpisodes, allStudentScores, allProjectScores, allSteps, bestStudentAssigned,
+                           numberOptions, allStudentsAssigned, allProjectAssignations, sumStudentAssigned)
 
     return bestResult
 
 
 def _executionAnalysis(numberEpisodes, allStudentScores, allProjectScores, allSteps, bestStudentAssigned, numberOptions,
-                       allStudentsAssigned, projectAssignations):
+                       allStudentsAssigned, projectAssignations, sumStudentAssigned):
     """"Function to print the analysis of the execution"""
 
     averageMaxStudentScore = [0.0 for _ in range(numberEpisodes)]
@@ -374,7 +368,8 @@ def _executionAnalysis(numberEpisodes, allStudentScores, allProjectScores, allSt
         allAverageSkillsScore[episode] = st.mean(averageSkillsScore)
 
     print("-> Results after " + str(numberEpisodes) + " episodes:")
-    print("   -> Total student assigned " + str(round((bestStudentAssigned / numberEpisodes), 2)) + ".")
+    print("   -> Best student assigned " + str(round(bestStudentAssigned, 2)) + ".")
+    print("   -> Average student assigned " + str(round((sumStudentAssigned / numberEpisodes), 2)) + ".")
     print("   -> Average steps per episode: " + str(round((totalSteps / numberEpisodes), 2)) + ".")
     print("   -> Average final students score: " + str(round(st.mean(allAverageStudentScore) * 100, 2)) + "%.")
     print("   -> Average final projects score: " + str(round(st.mean(allAverageProjectScore) * 100, 2)) + "%.")
@@ -385,7 +380,7 @@ def _executionAnalysis(numberEpisodes, allStudentScores, allProjectScores, allSt
 
 
 def _finalAnalysis(finalState, studentsSelections):
-    """"Function to analyze how many students are correct"""
+    """"Function to analyze the resignation"""
 
     studentsWithOption = 0
     studentsWithCorrectOption = [0 for _ in range(len(studentsSelections[0]["options"]))]
@@ -457,43 +452,26 @@ def main():
         mode = DEFAULT_MODE
         numberOptions = DEFAULT_NUMBER_OPTIONS
         typeAgent = DEFAULT_AGENT
-        isTraining = DEFAULT_IS_TRAINING
-        importingData = DEFAULT_IMPORTING_DATA
+
         if len(sys.argv) > 1:
             mode = int(sys.argv[1])
             print("-> Mode of execution " + sys.argv[1] + ".")
             if len(sys.argv) > 2:
                 numberOptions = int(sys.argv[2])
                 print("-> Creating " + sys.argv[2] + " options per student.")
-                if len(sys.argv) > 3:
+                if len(sys.argv) == 4:
                     typeAgent = int(sys.argv[3])
-                    print("-> Agent type = " + sys.argv[2] + ".")
-                    if len(sys.argv) > 4:
-                        isTraining = int(sys.argv[4])
-                        print("-> Training = " + sys.argv[2] + ".")
-                        if len(sys.argv) == 6:
-                            importingData = int(sys.argv[5])
-                        else:
-                            print("-> Missing if you want to import data, default = " + str(importingData) + ".")
-                    else:
-                        print("-> Missing if it has to train, default = " + str(isTraining) + ".")
-                        print("-> Missing if you want to import data, default = " + str(importingData) + ".")
+                    print("-> Agent type = " + sys.argv[3] + ".")
                 else:
-                    print("-> Missing if it has to train, default = " + str(isTraining) + ".")
                     print("-> Missing type of agent, default = " + agentName[typeAgent] + ".")
-                    print("-> Missing if you want to import data, default = " + str(importingData) + ".")
             else:
-                print("-> Missing if it has to train, default = " + str(isTraining) + ".")
                 print("-> Missing type of agent, default = " + agentName[typeAgent] + ".")
                 print("-> Missing number of option per student to create, default = " + str(DEFAULT_NUMBER_OPTIONS)
                       + ".")
-                print("-> Missing if you want to import data, default = " + str(importingData) + ".")
         else:
             print("-> Missing what mode to use, default = " + str(mode) + ".")
-            print("-> Missing if it has to train, default = " + str(isTraining) + ".")
             print("-> Missing type of agent, default = " + agentName[typeAgent] + ".")
             print("-> Missing number of option per student to create, default = " + str(DEFAULT_NUMBER_OPTIONS) + ".")
-            print("-> Missing if you want to import data, default = " + str(importingData) + ".")
 
         students = []
         projects = []
@@ -548,13 +526,9 @@ def main():
                 bestResult = _randomExecution(env)
 
             elif typeAgent == 1:
-                if importingData:
-                    qTable = pd.read_csv('../data/qTable.csv', sep=',', header=None)
-                else:
-                    qTable = _qTableCreator(len(students), len(projects), numberOptions)
+                qTable = _qTableCreator(len(students), len(projects), numberOptions)
 
-                if isTraining:
-                    qTable = _qLearningTraining(env, qTable, numberOptions, len(projects))
+                qTable = _qLearningTraining(env, qTable, numberOptions, len(projects))
 
                 bestResult = _qLearningExecution(env, qTable, numberOptions, len(projects))
 
@@ -564,7 +538,7 @@ def main():
                 print("QTable exported.")
 
             else:
-                bestResult = _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions)
+                bestResult = _stableBaselineTrainingAndExecution(env, typeAgent, numberOptions, mode)
 
             env.close()
             print("Environment closed.")

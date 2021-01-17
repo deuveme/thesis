@@ -4,18 +4,17 @@ import math
 import sys
 from copy import deepcopy
 from geopy.distance import geodesic
-from gym import error, spaces, utils
-from gym.utils import seeding
+from gym import spaces
 
 ALPHA = 7.   # 7
-GAMMA = 2.  # 2
-EPSILON = 1.  # 1
+BETA = 2.  # 2
+GAMMA = 1.  # 1
 
-BREAKING_EPISODE = 1000000
+BREAKING_EPISODE = 100000
 
 
 class Recommender4StudentsEnv(gym.Env):
-    """A Recommender for students environment for OpenAI gym"""
+    """Environment for a recommender for students for OpenAI gym"""
 
     def __init__(self, students, projects, numberOptions, withImage, mode, studentsAlreadyAssigned):
         """"Environment initialization"""
@@ -30,19 +29,16 @@ class Recommender4StudentsEnv(gym.Env):
         if self.mode == 1:
             self.numberOptions = 1
             self.studentsAlreadyAssigned = studentsAlreadyAssigned
-            self.studentsSelections = []
+            # self.studentsSelections = []
         else:
             self.numberOptions = numberOptions
 
         self.action_space = spaces.MultiDiscrete((len(students), len(projects)))
 
         if withImage:
-            # self.ObservationSpaceLimits = [len(projects) + 1] * (len(students) * numberOptions)
-            self.bytesNeeded = numberOptions * len(students) * ((len(projects) / 256) + 1)
+            bytesNeeded = numberOptions * len(students) * ((len(projects) / 256) + 1)
 
-            # self.bytesNeeded = sum(map(lambda limit: math.ceil(math.log(limit, 256)),
-            #                           self.ObservationSpaceLimits))
-            self.stateImageSize = int(math.pow(2, math.ceil(math.log(self.bytesNeeded, 4))))
+            self.stateImageSize = int(math.pow(2, math.ceil(math.log(bytesNeeded, 4))))
 
             self.observation_space = spaces.Box(low=0,
                                                 high=255,
@@ -59,6 +55,8 @@ class Recommender4StudentsEnv(gym.Env):
         self.inSameState = 0
 
     def _assignStudents(self):
+        """"Assign students already assigned"""
+
         if self.mode == 1:
             for studentId in range(len(self.studentsAlreadyAssigned)):
                 projectId = self.studentsAlreadyAssigned[studentId][0]
@@ -69,15 +67,21 @@ class Recommender4StudentsEnv(gym.Env):
 
     @staticmethod
     def _distanceCalculation(studentLocation, projectLocation):
+        """"Calculate the score of the distance preference"""
+
         distance = geodesic(studentLocation, projectLocation).km
         return 0.0 if distance > 50 else (50.0 - distance) / 50.0
 
     @staticmethod
     def _salaryCalculation(studentSalary, projectSalary):
+        """"Calculate the score of the salary preference"""
+
         difference = abs(studentSalary - projectSalary)
         return 1.0 if studentSalary <= projectSalary else difference / 500.0 if difference <= 500 else 0.0
 
     def _studentPreferencesPunctuation(self, student, project):
+        """"Calculate the preference score of an student"""
+
         punctuation = 0.0
         factorsToEvaluate = 0.0
         if student["preferredLocation"]["importance"] != 0:
@@ -98,15 +102,21 @@ class Recommender4StudentsEnv(gym.Env):
 
     @staticmethod
     def _subtractionCalculation(firstValue, secondValue, maxValue):
+        """"Calculate the score for a subtraction type preference"""
+
         difference = abs(firstValue - secondValue)
         return difference / maxValue if difference <= maxValue else 0.0
 
     @staticmethod
     def _markCalculation(studentMark, projectMark):
+        """"Calculate the mark preference score"""
+
         difference = abs(studentMark - projectMark)
         return 1.0 if studentMark <= projectMark else difference / 1.0 if difference <= 1 else 0.0
 
     def _projectPreferencesPunctuation(self, student, project):
+        """"Calculate the preference score of a project"""
+
         punctuation = 0.0
         factorsToEvaluate = 0.0
         if project["preferredAgeParticipants"]["importance"] != 0:
@@ -197,8 +207,8 @@ class Recommender4StudentsEnv(gym.Env):
         skillsPunctuation = self._skillsPunctuation(studentNumber, project, option)
 
         return (ALPHA * studentPreferencesPunctuation) + \
-               (GAMMA * projectPreferencesPunctuation) + \
-               (EPSILON * skillsPunctuation)
+               (BETA * projectPreferencesPunctuation) + \
+               (GAMMA * skillsPunctuation)
 
     def _imageStateGeneration(self):
         """"Function to convert state to image"""
@@ -398,9 +408,6 @@ class Recommender4StudentsEnv(gym.Env):
         self.inSameState = 0
         if execution:
             self.ending = 0
-        # print(self.state)
-        # print(self.assigned)
-        # print(self.studentsAssignedToProject)
 
         return deepcopy(self._imageStateGeneration()) if self.withImage else deepcopy(self.state)
 

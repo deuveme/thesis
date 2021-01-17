@@ -4,6 +4,8 @@ from progress.bar import Bar
 
 
 def main():
+    """"Script that generate the preference list of each student"""
+
     print("Importing data....")
     try:
         with open("../data/optionsData.json") as dataFile:
@@ -17,9 +19,13 @@ def main():
         progressBar = Bar("Selecting option for each student:", max=len(students))
         for student in students:
             options = []
-            for option in range(0, numberOptions):
+            optionFilled = 0
+            for option in student['projectOptions']:
+                if option != -1:
+                    optionFilled += 1
+            for option in range(0, optionFilled):
                 optionSelected = student['projectOptions'][r.randint(0, numberOptions - 1)]
-                while optionSelected in options:
+                while optionSelected in options or optionSelected == -1:
                     optionSelected = student['projectOptions'][r.randint(0, numberOptions - 1)]
                 options.append(optionSelected)
 
