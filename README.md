@@ -2,6 +2,27 @@
 Treball de Final de Grau - Realitzat per David Valero Masachs i dirigit per Prof. Dr. Cecilio Angulo Bahón.
 Trobaràs tota la memòria del projecte a `./documentation/memoria.pdf`.
 
+## Resum ##
+
+En el món universitari cada vegada és més freqüent que els estudiants hagin de fer pràctiques en una empresa durant el 
+seu grau universitari, així i tot no hi ha sistemes que simplifiquin la feina d'assignació dels estudiants als diferents 
+projectes oferts per les empreses.
+
+Aquest treball final de grau presenta, mitjançant l'ús d'algorismes de reinforcement learning (aprenentatge per 
+reforç), una eina que dóna als estudiants tantes alternatives com es vulgui segons les seves preferències, els projectes
+que s'ofereixen i els perfils d'estudiants que volen cadascuna de les empreses per cada projecte. A més, també permet 
+que cada estudiant pugui ordenar-les al seu gust i el sistema, intentant satisfer al màxim possible als estudiants, 
+dóna una assignació final.
+
+Per dur a terme aquest projecte s'ha utilitzat Python com a llenguatge de programació i la llibreria OpenAI per 
+facilitar la creació de l'entorn. A causa de les característiques del problema, per l'agent s'ha utilitzat la llibreria 
+Stable Baselines i l'algorisme d'aprenentatge per reforç A2C per realitzar la primera assignació.
+
+L'assignació final també utilitza la mateixa estructura i algorisme, però per facilitar l'entrenament, un bucle assigna
+prèviament tots els estudiants que pot assignar directament i l'agent A2C és l'encarregat d'assignar els que no se'ls hi
+ha pogut assignar cap projecte de la seva llista inicial.
+
+
 ## Arxius i la seva funcionalitat ##
 ### Carpeta ./samples ###
 Trobarà tots els executables del projecte. S'han creat els següents scripts:
