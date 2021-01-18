@@ -2,7 +2,7 @@
 Treball de Final de Grau - Realitzat per David Valero Masachs i dirigit per Prof. Dr. Cecilio Angulo Bahón.
 Trobaràs tota la memòria del projecte a `./documentation/memoria.pdf`.
 
-## Arxius i la seva funcionalitat: ##
+## Arxius i la seva funcionalitat ##
 ### Carpeta ./samples ###
 Trobarà tots els executables del projecte. S'han creat els següents scripts:
 
