@@ -1,27 +1,18 @@
-# Sistema recomanador per la formació d'equips
-Treball de Final de Grau - Realitzat per David Valero Masachs i dirigit per Prof. Dr. Cecilio Angulo Bahón.
-Trobaràs tota la memòria del projecte a `./documentation/memoria.pdf`.
+# Recomancer system to form team using `reinforcement learning`
+Thesis of my Computer Science Bachelor - Done by David Valero Masachs and directed by Prof. Dr. Cecilio Angulo Bahón.
+You will find all the documentation of the thesis in `./documentation/memoria.pdf`.
 
-## Resum ##
+## Abstract ##
 
-En el món universitari cada vegada és més freqüent que els estudiants hagin de fer pràctiques en una empresa durant el 
-seu grau universitari, així i tot no hi ha sistemes que simplifiquin la feina d'assignació dels estudiants als diferents 
-projectes oferts per les empreses.
+In the university world it is increasingly common for students to do internships in a company during their university degree, but there are no systems that simplify the work
+of assigning students to the different projects offered by companies.
 
-Aquest treball final de grau presenta, mitjançant l'ús d'algorismes de reinforcement learning (aprenentatge per 
-reforç), una eina que dóna als estudiants tantes alternatives com es vulgui segons les seves preferències, els projectes
-que s'ofereixen i els perfils d'estudiants que volen cadascuna de les empreses per cada projecte. A més, també permet 
-que cada estudiant pugui ordenar-les al seu gust i el sistema, intentant satisfer al màxim possible als estudiants, 
-dóna una assignació final.
+This final degree project presents, through the use of reinforcement learning algorithms, a tool that gives students as many alternatives as they want according to their preferences, the projects that are offered and the student profiles that each of the companies wants for each project. In addition, it also allows each student to order their alternatives to their liking and the system, trying to satisfy as many students as possible, gives a final assignment.
 
-Per dur a terme aquest projecte s'ha utilitzat Python com a llenguatge de programació i la llibreria OpenAI per 
-facilitar la creació de l'entorn. A causa de les característiques del problema, per l'agent s'ha utilitzat la llibreria 
-Stable Baselines i l'algorisme d'aprenentatge per reforç A2C per realitzar la primera assignació.
+To carry out this project Python has been used as a programming language and OpenAI library to facilitate the creation of the environment. Due to the characteristics
+of the problem, the agent used Stable Baselines library and A2C reinforcement learning algorithm to perform the first assignment.
 
-L'assignació final també utilitza la mateixa estructura i algorisme, però per facilitar l'entrenament, un bucle assigna
-prèviament tots els estudiants que pot assignar directament i l'agent A2C és l'encarregat d'assignar els que no se'ls hi
-ha pogut assignar cap projecte de la seva llista inicial.
-
+The final assignment also uses the same structure and algorithm, but to facilitate training, a loop pre-assigns all the students it can assign directly. The A2C agent is responsible for assigning students who cannot be assigned to any project on their initial list of alternatives.
 
 ## Arxius i la seva funcionalitat ##
 ### Carpeta ./samples ###
